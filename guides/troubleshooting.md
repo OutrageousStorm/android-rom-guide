@@ -1,172 +1,117 @@
 # ROM Flashing Troubleshooting
 
-Common issues and fixes when flashing custom ROMs.
+## Boot Loop After Flash
 
-## Boot Loops
+### Diagnosis
+- Device stuck on splash screen or bootloader logo
+- Continuous restarts every 5-10 seconds
+- No recovery access possible
 
-### Symptom: Device boots to logo then reboots infinitely
+### Common causes & fixes
 
-**Cause 1: GApps wrong version**
-- Solution: Flash correct GApps for your Android version
-- Example: Android 13 ROM needs Android 13 GApps
-
-**Cause 2: Magisk module conflicts**
+**1. Vendor/Firmware mismatch**
 ```bash
-# Boot to recovery, disable all modules
-# Or boot with power button held (skip modules)
-# Then remove the bad module
-```
-
-**Cause 3: Incompatible recovery**
-- Flash matching TWRP version for your ROM
-- Some ROMs need newer TWRP than others
-
-### Symptom: Boots fine but apps crash immediately
-
-**Cause: Conflicting Magisk module**
-```bash
-adb disable-verity                    # disable dm-verity temporarily
-adb wait-for-recovery
-adb sideload twrp.zip                 # boot to recovery
-# In TWRP: disable Magisk in modules
-```
-
-## Installation Errors
-
-### "Signature verification failed"
-
-**In TWRP:**
-- Go to Wipe → Format Data (not just clear)
-- Or: Settings → turn off signature verification
-
-**Via Magisk:**
-- Flash after ROM, not before
-
-### "This build is for OnePlus 9, this device is..."
-
-**Cause: Flashing ROM for wrong device**
-- Check device codename: `adb shell getprop ro.product.device`
-- Re-download correct ROM
-
-### "Not enough space"
-
-**Solution:**
-```bash
-adb sideload rom.zip          # instead of TWRP install from /sdcard
-```
-
-## Post-Flash Issues
-
-### No network / WiFi greyed out
-
-**Symptom: WiFi toggle disabled after flash**
-
-```bash
-# Reboot to recovery
-# Advanced → Terminal
-adb shell rm /data/misc/wifi/*
-adb shell reboot
-```
-
-Or reset WiFi via settings after first boot.
-
-### Battery drains fast
-
-**Check:**
-```bash
-# See what's holding wakelocks
-adb shell dumpsys batterystats | grep WAKE_LOCK
-
-# GMS draining? Install:
-# Magisk → GMS Doze module
-```
-
-### Safetynet / Play Integrity fails
-
-**Install:**
-- PlayIntegrityFix (Magisk module)
-- TrickyStore (LSPosed module) for banking apps
-
-### Apps force-close
-
-**Try:**
-```bash
-adb shell pm clear com.android.systemui
-adb reboot
-```
-
-Or do a clean install (wipe data).
-
-## Recovery Won't Boot
-
-### Symptom: Can't boot to TWRP
-
-**If on fastboot:**
-```bash
-fastboot boot twrp.img          # temp boot
-# Then in TWRP: Install → Install Recovery Ramdisk
-```
-
-**If stuck on logo:**
-```bash
-fastboot flash boot twrp.img    # flash as boot
+# You flashed a ROM for different device or build variant
+# Solution: get correct ROM for your exact device codename + region
+adb reboot bootloader
+fastboot flash recovery twrp.img
 fastboot reboot recovery
+# In recovery: restore backup or re-flash correct ROM
 ```
 
-## Reverting to Stock
-
-**Pixel:**
+**2. Corrupted GApps package**
 ```bash
-# Download factory image from https://developers.google.com/android/images
-unzip bluejay-factory-XXXX.zip
-cd bluejay-factory-XXXX
-./flash-all.sh
+# GApps too old or wrong Android version
+# Solution: wipe System, reflash ROM, use NEW GApps
+# In TWRP:
+#   Wipe → Advanced → System
+#   Install → ROM → (no GApps this time)
+#   Reboot → setup without GApps first
+#   If stable: go back to recovery, install newer GApps
 ```
 
-**Samsung:**
+**3. Incompatible Magisk version**
 ```bash
-# Download via SmartSwitch or from sammobile
-# Flash via Odin
+# Magisk built for different API level
+# Solution: boot into recovery, uninstall Magisk
+# adb sideload magisk_latest.apk
 ```
 
-**Generic:**
+**4. Full data wipe didn't work**
 ```bash
-fastboot -w update image.zip  # wipes data
+# Old data conflicts with new ROM
+# Solution: wipe Data + Cache + Dalvik
+# In TWRP: Wipe → Advanced Wipe → check all three
 ```
 
-## Performance Issues
+## Stuck in Recovery
 
-### Sluggish after flash
+**Can't boot to system even from recovery**
 
-**Try:**
 ```bash
-# Clear system cache
-adb shell pm trim-caches 100G
+# Try ADB sideload
+adb sideload rom.zip
 
-# Disable unused sensors
-adb shell settings put secure sensor_default_mode 0
-
-# Reboot
-adb reboot
+# If that fails, try re-flashing kernel/boot
+adb reboot bootloader
+fastboot flash boot boot.img
+fastboot reboot
 ```
 
-### High idle battery drain
+## "E: can't find recovery" (TWRP message)
 
-**Disable in settings:**
-- Location history
-- WiFi scanning
-- Google activity
+Means recovery partition is corrupted:
+```bash
+# Reflash TWRP
+fastboot flash recovery twrp.img
+fastboot boot twrp.img  # temp boot to verify
+```
 
-**Or install:**
-- GMS Doze Magisk module
-- Disable background location
+## Stuck on "Android is starting..."
 
-## Asking for Help
+**Kernel panic or corruption**
 
-When posting a brick log:
-1. ROM name and version
-2. Device model + codename
-3. Recovery version
-4. Last action taken
-5. Serial output from TWRP if available
-6. Boot.log (TWRP → Advanced → View Log)
+```bash
+# Force reboot by holding power 10 seconds
+# Get to recovery, reinstall ROM
+# If using custom kernel, switch to stock kernel first
+```
+
+## Device won't recognize USB
+
+```bash
+adb devices  # shows nothing
+
+# Try:
+1. Different USB cable
+2. Different port
+3. Disable USB authentication: adb kill-server && adb devices
+4. Enable "ADB debugging" on device (if bootable)
+   Settings → Developer → USB debugging
+
+# If stuck in bootloader:
+fastboot devices  # should show serial
+```
+
+## Bricked (won't boot, no recovery, no fastboot)
+
+**Last resort:**
+
+1. **NAND rework** (professional, expensive)
+2. **Unbrick tools** (OEM-specific, check XDA)
+3. **EDL mode** (Qualcomm devices) — may be recoverable
+
+For Qualcomm:
+```bash
+# Hold Vol Down + Power for 10+ seconds
+# Should show "Qualcomm HS-USB QDLoader 9008" in Device Manager (Windows)
+adb devices  # if in EDL shows as COM port
+# Use Qualcomm Emergency Download Mode tool + stock firmware
+```
+
+## Still stuck?
+
+Check XDA Developers for your specific device:
+- https://forum.xda-developers.com
+- Search: "[device] ROM/kernel troubleshooting"
+- Post on XDA — experts will help
