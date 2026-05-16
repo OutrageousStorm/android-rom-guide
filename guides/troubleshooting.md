@@ -1,117 +1,137 @@
 # ROM Flashing Troubleshooting
 
-## Boot Loop After Flash
+## Installation Issues
 
-### Diagnosis
-- Device stuck on splash screen or bootloader logo
-- Continuous restarts every 5-10 seconds
-- No recovery access possible
-
-### Common causes & fixes
-
-**1. Vendor/Firmware mismatch**
+### "Error: Failed to verify payload"
+Usually incorrect ROM for your device.
 ```bash
-# You flashed a ROM for different device or build variant
-# Solution: get correct ROM for your exact device codename + region
-adb reboot bootloader
-fastboot flash recovery twrp.img
-fastboot reboot recovery
-# In recovery: restore backup or re-flash correct ROM
+# Verify device codename
+adb shell getprop ro.product.device
+adb shell getprop ro.product.board
+
+# Download ROM matching your exact device and build
 ```
 
-**2. Corrupted GApps package**
+### "No such file or directory" when flashing
+Recovery can't find the ROM file on device.
 ```bash
-# GApps too old or wrong Android version
-# Solution: wipe System, reflash ROM, use NEW GApps
-# In TWRP:
-#   Wipe → Advanced → System
-#   Install → ROM → (no GApps this time)
-#   Reboot → setup without GApps first
-#   If stable: go back to recovery, install newer GApps
-```
-
-**3. Incompatible Magisk version**
-```bash
-# Magisk built for different API level
-# Solution: boot into recovery, uninstall Magisk
-# adb sideload magisk_latest.apk
-```
-
-**4. Full data wipe didn't work**
-```bash
-# Old data conflicts with new ROM
-# Solution: wipe Data + Cache + Dalvik
-# In TWRP: Wipe → Advanced Wipe → check all three
-```
-
-## Stuck in Recovery
-
-**Can't boot to system even from recovery**
-
-```bash
-# Try ADB sideload
+# Use adb sideload instead
+adb reboot recovery
+# In recovery: Advanced → ADB Sideload
 adb sideload rom.zip
+```
 
-# If that fails, try re-flashing kernel/boot
+### Boot loop after ROM flash
+Usually a bad wipe or incompatible GApps.
+```bash
+# Boot to recovery and restore previous backup
+# Or: full factory reset (Advanced Wipe → all partitions)
+```
+
+### "Signature verification failed"
+TWRP can't verify ROM signature (may be intentional on some ROMs).
+```bash
+# In TWRP: Wipe → Advanced Wipe → uncheck "Verify ZIP signature"
+# Then try flashing again
+```
+
+### Bootloader won't unlock on Samsung
+Samsung may have bootloader locked by carrier (T-Mobile).
+```bash
+# Check if unlockable
 adb reboot bootloader
-fastboot flash boot boot.img
-fastboot reboot
+fastboot getvar (bootloader)
+
+# If it says "locked - carrier", you need original carrier SIM
 ```
 
-## "E: can't find recovery" (TWRP message)
+---
 
-Means recovery partition is corrupted:
+## Post-Flash Issues
+
+### Phone gets stuck on boot logo
 ```bash
-# Reflash TWRP
-fastboot flash recovery twrp.img
-fastboot boot twrp.img  # temp boot to verify
+# Try booting to recovery first:
+adb reboot recovery
+
+# Then factory reset from recovery:
+# Wipe → Advanced Wipe → Dalvik, Cache, Data, System
+# Reflash ROM + GApps
 ```
 
-## Stuck on "Android is starting..."
-
-**Kernel panic or corruption**
-
+### Certain apps force close
+Usually a GApps incompatibility or missing dependencies.
 ```bash
-# Force reboot by holding power 10 seconds
-# Get to recovery, reinstall ROM
-# If using custom kernel, switch to stock kernel first
+# Try reflashing with a smaller GApps package (pico instead of full)
+# Or use microG instead of Google Play
 ```
 
-## Device won't recognize USB
-
+### No mobile network / SIM not detected
+Device tree or modem issue — ROM may not have proper radio drivers.
 ```bash
-adb devices  # shows nothing
+# Check if modem.img needs to be flashed separately
+# Some ROMs require: fastboot flash radio modem.img
 
-# Try:
-1. Different USB cable
-2. Different port
-3. Disable USB authentication: adb kill-server && adb devices
-4. Enable "ADB debugging" on device (if bootable)
-   Settings → Developer → USB debugging
-
-# If stuck in bootloader:
-fastboot devices  # should show serial
+# Or try reflashing stock ROM via ADB/Odin and starting over
 ```
 
-## Bricked (won't boot, no recovery, no fastboot)
-
-**Last resort:**
-
-1. **NAND rework** (professional, expensive)
-2. **Unbrick tools** (OEM-specific, check XDA)
-3. **EDL mode** (Qualcomm devices) — may be recoverable
-
-For Qualcomm:
+### WiFi doesn't work
+Usually a driver issue — try different ROM or check if kernel includes WiFi modules.
 ```bash
-# Hold Vol Down + Power for 10+ seconds
-# Should show "Qualcomm HS-USB QDLoader 9008" in Device Manager (Windows)
-adb devices  # if in EDL shows as COM port
-# Use Qualcomm Emergency Download Mode tool + stock firmware
+# From LineageOS, try a different branch or older build
 ```
 
-## Still stuck?
+---
 
-Check XDA Developers for your specific device:
-- https://forum.xda-developers.com
-- Search: "[device] ROM/kernel troubleshooting"
-- Post on XDA — experts will help
+## Security & Root Issues
+
+### Banking app won't open after root
+SafetyNet/Play Integrity failing.
+```bash
+# Install PlayIntegrityFix (Magisk module)
+# Then install TrickyStore (LSPosed module) for extra hardening
+# Reboot and test
+```
+
+### "Device not certified" Google Play error
+Play Integrity check failing.
+```bash
+# Option 1: Install PlayIntegrityFix module + reboot
+# Option 2: Disable Google Play Integrity in developer settings
+# Option 3: Use Aurora Store instead of Play Store (no certification check)
+```
+
+### Root detected by security app
+Try using Shamiko + DenyList on your banking app.
+```bash
+# Magisk → Settings → Configure DenyList
+# Add com.example.bankapp (check your bank's package name)
+# Also enable Zygisk in Magisk settings
+# Reboot
+```
+
+---
+
+## Performance Issues
+
+### Phone feels slow after ROM flash
+Usually needs optimization or tweaking.
+```bash
+# Disable background processes: Settings → Apps → [app] → Battery → Background restriction
+# Clear cache: Settings → Storage → Cached Data → Clear
+# Disable animations: Settings → Developer Options → Animation scale → 0x
+```
+
+### Battery drains quickly
+Check what's keeping device awake.
+```bash
+python3 android-wakelock-analyzer.py bugreport.zip
+# Identify top wakelock culprits and restrict background for those apps
+```
+
+### Overheating
+Usually bad kernel or thermal management.
+```bash
+# Try a different kernel version or revert to stock kernel
+# Check Settings → Display → Adaptive battery → Off temporarily
+```
