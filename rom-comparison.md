@@ -1,56 +1,59 @@
-# Custom ROM Comparison Matrix
+# ROM Comparison Chart
 
-| ROM | LineageOS | crDroid | Evolution X | CalyxOS | GrapheneOS |
-|-----|-----------|---------|------------|---------|-----------|
-| **Based on** | AOSP | AOSP | AOSP | AOSP | AOSP |
-| **Devices supported** | 200+ | 150+ | 80+ | 60+ | 10 (Pixel) |
-| **Google apps** | via GApps | via GApps | via GApps | microG | Sandboxed |
-| **Security focus** | Stability | Features | Performance | Privacy | Hardening |
-| **Updates frequency** | Monthly | Biweekly | Monthly | Monthly | Continuous |
-| **Community size** | Huge | Large | Medium | Small | Niche |
-| **Customization** | Medium | High | High | Low | None (secure) |
-| **Battery life** | Good | Excellent | Good | Good | Excellent |
-| **Best for** | General use | Power users | Gaming | Privacy | Maximum security |
-| **Build difficulty** | Easy | Medium | Medium | Hard | Hard |
-| **Documentation** | Excellent | Good | Good | Good | Excellent |
-| **First-time friendly** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
+Quick reference — which ROM for which device/use case.
+
+| ROM | Privacy | Features | Updates | Best For |
+|-----|---------|----------|---------|----------|
+| **GrapheneOS** | ★★★★★ | Stock AOSP | Fast | Pixel — maximum privacy |
+| **CalyxOS** | ★★★★☆ | microG | Regular | Pixel/Fairphone — privacy + Google app support |
+| **DivestOS** | ★★★★☆ | Optional microG | Regular | 200+ devices — privacy everywhere |
+| **LineageOS** | ★★★☆☆ | Stable AOSP | Regular | Widest device support, clean |
+| **/e/OS** | ★★★★☆ | DeGoogled suite | Regular | Privacy + cloud sync |
+| **crDroid** | ★★★☆☆ | Heavy customization | Regular | Customization lovers |
+| **Evolution X** | ★★★☆☆ | Pixel-like | Regular | Pixel UI feel |
+| **Paranoid Android** | ★★★☆☆ | Minimalist | Regular | Clean + minimal |
+| **RisingOS** | ★★★☆☆ | Latest Android | Regular | Android 15+ features |
 
 ---
 
-## Decision Matrix
+## By Device Type
 
-**What to pick based on your needs:**
+### Pixel (best options)
+1. **GrapheneOS** — unmatched security, locked bootloader support
+2. **CalyxOS** — privacy + ease of use
+3. **LineageOS** — if you want standard AOSP
 
-### Want max customization?
-→ **crDroid** or **Evolution X**
-- Hundreds of tweaks in Settings
-- Performance profiles (Battery/Balanced/Gaming)
-- Per-app themes and accents
-- Notification control granularity
+### Samsung (limited custom ROM support)
+1. **LineageOS** — if available for your model
+2. **crDroid** — if available
+3. **Stock One UI** — if no custom ROM exists
 
-### Want wide device support?
-→ **LineageOS**
-- 200+ official builds
-- Longest device support timeline (5+ years)
-- Excellent community documentation
-- Easiest for first-time flashing
+### Xiaomi / POCO (excellent support)
+1. **LineageOS** — stable, no Google
+2. **MIUI for microG** — keep MIUI feel, no Google
+3. **crDroid** — customization
 
-### Want privacy out of the box?
-→ **CalyxOS** or **GrapheneOS**
-- No Google by default (microG vs Sandboxed)
-- Network-level blocking built-in
-- Automatic reboot on inactivity
-- Hardened boot and memory
+### OnePlus (excellent support)
+1. **LineageOS** — clean, updated
+2. **Evolution X** — Oxygen OS feel
+3. **crDroid** — customization
 
-### Want battery king?
-→ **GrapheneOS** or **crDroid**
-- GrapheneOS: hardware-level optimizations
-- crDroid: aggressive doze + battery profiles
-- Both consistently beat stock Android
+### Fairphone (best for repairability)
+1. **CalyxOS** — official support, privacy
+2. **LineageOS** — if available
 
-### Want it all (good luck)?
-→ **Pixel Experience** (middle ground)
-- Looks like stock Pixel (Material You)
-- Decent customization via GApps + modules
-- Fast updates
-- 100+ devices supported
+---
+
+## Update Frequency
+
+**Fastest updates:** LineageOS, GrapheneOS (weekly-ish if critical)  
+**Regular updates:** crDroid, Evolution X (monthly-ish)  
+**Slower updates:** /e/OS, Paranoid Android (quarterly)
+
+---
+
+## Device Support
+
+**Most devices supported:** LineageOS (200+), DivestOS (200+)  
+**Limited to high-end:** GrapheneOS (Pixel only)  
+**Good coverage:** CalyxOS (20+), /e/OS (250+)
