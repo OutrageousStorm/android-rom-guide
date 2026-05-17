@@ -1,87 +1,130 @@
-# ROM Flashing Troubleshooting
+# ROM Troubleshooting Guide
 
-Common issues and solutions when flashing custom ROMs.
+Common issues after flashing a ROM and how to fix them.
 
-## Boot Loops
+## Bootloop / Doesn't boot
 
-**Issue:** Device stuck on boot animation or logo screen
-
-**Causes:**
-- Incompatible ROM for your device
-- Incomplete wipe (didn't wipe /data or /cache)
-- Corrupted system partition
-
-**Fix:**
-1. Boot to recovery
-2. Wipe Dalvik/ART Cache + Cache + Data
-3. Flash ROM again
-4. If still broken, restore backup from TWRP
-
-## ForceClose Errors on First Boot
-
-**Issue:** Apps crashing with "Unfortunately X has stopped"
-
-**Causes:**
-- ROM didn't finish optimizing on first boot
-- Missing GApps
-- Incompatible Magisk module
-
-**Fix:**
-1. Let device sit for 5–10 minutes (optimizing apps)
-2. Reboot
-3. Check logcat: `adb logcat | grep FATAL`
-
-## No Mobile Signal / Call Issues
-
-**Issue:** Device won't connect to cellular network
-
-**Causes:**
-- Modem partition not flashed
-- Device tree mismatch
-- Firmware mismatch
+**Signs:** Device gets stuck on splash screen or boot animation.
 
 **Fix:**
 ```bash
-# Re-flash modem (requires original firmware)
-adb reboot bootloader
-fastboot flash modem modem.img
+# Boot to TWRP recovery
+adb reboot recovery
+
+# Wipe everything (from TWRP: Wipe → Advanced Wipe → select all)
+adb sideload rom.zip
+adb sideload gapps.zip
+adb sideload magisk.zip
+
+# Reboot
+adb reboot
+```
+
+If still looping after 10 minutes, flash stock ROM via fastboot/Odin.
+
+---
+
+## "Unfortunately, X has stopped" crashes
+
+**Cause:** Missing GApps or GMS issues.
+
+**Fix:**
+1. Boot to TWRP
+2. Flash GApps again (MindTheGapps nano or pico)
+3. Wipe Dalvik/ART Cache → Advanced Wipe → Dalvik/ART Cache
+4. Reboot
+
+---
+
+## No data/slow network
+
+**Cause:** Radio firmware mismatch or incorrect region settings.
+
+**Fix:**
+```bash
+# Check if radio was flashed (device-specific)
+# For Samsung: Odin → AP slot includes radio
+# For others: separate radio.img flash via fastboot
+
+fastboot flash modem modem.img  # if available
 fastboot reboot
+
+# Set region in settings (some ROMs require this)
 ```
 
-## Can't Mount Internal Storage
+---
 
-**Issue:** /data partition won't mount in recovery
+## Google Play won't load apps / Play Integrity fails
 
-**Causes:**
-- Encryption mismatch
-- Corrupted partition table
+**Cause:** Rooted device, custom ROM, or modified build props.
 
 **Fix:**
 ```bash
-# In TWRP: Advanced → ADB Sideload
-adb sideload rom.zip  # bypasses internal storage
+# Install PlayIntegrityFix module (via Magisk)
+# Or install TrickyStore (LSPosed module)
+
+# Check status
+adb shell getprop ro.build.fingerprint  # should match official build
 ```
 
-## Battery Drain After Flash
+---
 
-**Issue:** Battery drains 20% per hour
+## Battery drain (waking constantly)
 
-**Fixes:**
-1. Disable background sync
-2. Run `adb shell dumpsys battery` to check for wakelocks
-3. Disable Google Play Services telemetry
-4. Flash kernel with undervolting support
+**Signs:** Phone gets hot, won't stay asleep.
 
-## Recovery Won't Flash
-
-**Issue:** TWRP fails with "Error executing updater"
-
-**Causes:**
-- ROM zip corrupted
-- Updater-binary mismatch
-- Device tree issue
+**Cause:** App misbehavior, sync settings, or location polling.
 
 **Fix:**
-1. Verify zip: `unzip -t rom.zip`
-2. Re-download ROM
-3. Flash via adb sideload instead
+```bash
+# See what's holding wake locks
+adb shell dumpsys battery | grep wake
+adb shell dumpsys power | grep -A 20 "WAKE_LOCK_HELD"
+
+# Disable sync for unused accounts (Settings → Accounts)
+# Disable location (Settings → Location)
+# Restrict background for problem apps (Settings → Battery → Background usage limits)
+```
+
+---
+
+## Camera/Fingerprint/NFC not working
+
+**Cause:** Device tree issues, missing blobs, or hardware HAL mismatch.
+
+**Fix:**
+1. Flash latest TWRP for your device (camera requires proper recovery)
+2. Use a ROM specifically built for your device (not GSI)
+3. If on GSI + missing drivers, try a device-specific ROM instead
+
+---
+
+## "No such file or directory" during flash
+
+**Cause:** Corrupted ROM zip or wrong file path.
+
+**Fix:**
+```bash
+# Check zip integrity
+unzip -t rom.zip  # should show "No errors"
+
+# Use absolute path
+adb sideload /full/path/to/rom.zip
+
+# Or push to device first
+adb push rom.zip /sdcard/
+adb shell cd /sdcard && unzip -t rom.zip
+```
+
+---
+
+## ROM keeps asking for setup after each reboot
+
+**Cause:** Factory reset flag not cleared or data encryption issue.
+
+**Fix:**
+```bash
+# Wipe data completely from TWRP
+# Make sure encryption is compatible with ROM
+# Disable forced encryption if needed (device-specific)
+```
