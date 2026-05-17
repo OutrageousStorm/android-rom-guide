@@ -1,137 +1,87 @@
 # ROM Flashing Troubleshooting
 
-## Installation Issues
+Common issues and solutions when flashing custom ROMs.
 
-### "Error: Failed to verify payload"
-Usually incorrect ROM for your device.
+## Boot Loops
+
+**Issue:** Device stuck on boot animation or logo screen
+
+**Causes:**
+- Incompatible ROM for your device
+- Incomplete wipe (didn't wipe /data or /cache)
+- Corrupted system partition
+
+**Fix:**
+1. Boot to recovery
+2. Wipe Dalvik/ART Cache + Cache + Data
+3. Flash ROM again
+4. If still broken, restore backup from TWRP
+
+## ForceClose Errors on First Boot
+
+**Issue:** Apps crashing with "Unfortunately X has stopped"
+
+**Causes:**
+- ROM didn't finish optimizing on first boot
+- Missing GApps
+- Incompatible Magisk module
+
+**Fix:**
+1. Let device sit for 5–10 minutes (optimizing apps)
+2. Reboot
+3. Check logcat: `adb logcat | grep FATAL`
+
+## No Mobile Signal / Call Issues
+
+**Issue:** Device won't connect to cellular network
+
+**Causes:**
+- Modem partition not flashed
+- Device tree mismatch
+- Firmware mismatch
+
+**Fix:**
 ```bash
-# Verify device codename
-adb shell getprop ro.product.device
-adb shell getprop ro.product.board
-
-# Download ROM matching your exact device and build
-```
-
-### "No such file or directory" when flashing
-Recovery can't find the ROM file on device.
-```bash
-# Use adb sideload instead
-adb reboot recovery
-# In recovery: Advanced → ADB Sideload
-adb sideload rom.zip
-```
-
-### Boot loop after ROM flash
-Usually a bad wipe or incompatible GApps.
-```bash
-# Boot to recovery and restore previous backup
-# Or: full factory reset (Advanced Wipe → all partitions)
-```
-
-### "Signature verification failed"
-TWRP can't verify ROM signature (may be intentional on some ROMs).
-```bash
-# In TWRP: Wipe → Advanced Wipe → uncheck "Verify ZIP signature"
-# Then try flashing again
-```
-
-### Bootloader won't unlock on Samsung
-Samsung may have bootloader locked by carrier (T-Mobile).
-```bash
-# Check if unlockable
+# Re-flash modem (requires original firmware)
 adb reboot bootloader
-fastboot getvar (bootloader)
-
-# If it says "locked - carrier", you need original carrier SIM
+fastboot flash modem modem.img
+fastboot reboot
 ```
 
----
+## Can't Mount Internal Storage
 
-## Post-Flash Issues
+**Issue:** /data partition won't mount in recovery
 
-### Phone gets stuck on boot logo
+**Causes:**
+- Encryption mismatch
+- Corrupted partition table
+
+**Fix:**
 ```bash
-# Try booting to recovery first:
-adb reboot recovery
-
-# Then factory reset from recovery:
-# Wipe → Advanced Wipe → Dalvik, Cache, Data, System
-# Reflash ROM + GApps
+# In TWRP: Advanced → ADB Sideload
+adb sideload rom.zip  # bypasses internal storage
 ```
 
-### Certain apps force close
-Usually a GApps incompatibility or missing dependencies.
-```bash
-# Try reflashing with a smaller GApps package (pico instead of full)
-# Or use microG instead of Google Play
-```
+## Battery Drain After Flash
 
-### No mobile network / SIM not detected
-Device tree or modem issue — ROM may not have proper radio drivers.
-```bash
-# Check if modem.img needs to be flashed separately
-# Some ROMs require: fastboot flash radio modem.img
+**Issue:** Battery drains 20% per hour
 
-# Or try reflashing stock ROM via ADB/Odin and starting over
-```
+**Fixes:**
+1. Disable background sync
+2. Run `adb shell dumpsys battery` to check for wakelocks
+3. Disable Google Play Services telemetry
+4. Flash kernel with undervolting support
 
-### WiFi doesn't work
-Usually a driver issue — try different ROM or check if kernel includes WiFi modules.
-```bash
-# From LineageOS, try a different branch or older build
-```
+## Recovery Won't Flash
 
----
+**Issue:** TWRP fails with "Error executing updater"
 
-## Security & Root Issues
+**Causes:**
+- ROM zip corrupted
+- Updater-binary mismatch
+- Device tree issue
 
-### Banking app won't open after root
-SafetyNet/Play Integrity failing.
-```bash
-# Install PlayIntegrityFix (Magisk module)
-# Then install TrickyStore (LSPosed module) for extra hardening
-# Reboot and test
-```
-
-### "Device not certified" Google Play error
-Play Integrity check failing.
-```bash
-# Option 1: Install PlayIntegrityFix module + reboot
-# Option 2: Disable Google Play Integrity in developer settings
-# Option 3: Use Aurora Store instead of Play Store (no certification check)
-```
-
-### Root detected by security app
-Try using Shamiko + DenyList on your banking app.
-```bash
-# Magisk → Settings → Configure DenyList
-# Add com.example.bankapp (check your bank's package name)
-# Also enable Zygisk in Magisk settings
-# Reboot
-```
-
----
-
-## Performance Issues
-
-### Phone feels slow after ROM flash
-Usually needs optimization or tweaking.
-```bash
-# Disable background processes: Settings → Apps → [app] → Battery → Background restriction
-# Clear cache: Settings → Storage → Cached Data → Clear
-# Disable animations: Settings → Developer Options → Animation scale → 0x
-```
-
-### Battery drains quickly
-Check what's keeping device awake.
-```bash
-python3 android-wakelock-analyzer.py bugreport.zip
-# Identify top wakelock culprits and restrict background for those apps
-```
-
-### Overheating
-Usually bad kernel or thermal management.
-```bash
-# Try a different kernel version or revert to stock kernel
-# Check Settings → Display → Adaptive battery → Off temporarily
-```
+**Fix:**
+1. Verify zip: `unzip -t rom.zip`
+2. Re-download ROM
+3. Flash via adb sideload instead
