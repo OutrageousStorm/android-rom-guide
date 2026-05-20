@@ -1,38 +1,33 @@
 #!/usr/bin/env python3
-"""compare_roms.py - Compare Android ROMs by features, performance, and security"""
-import json, argparse
+"""Compare ROM features: LineageOS, GrapheneOS, CalyxOS, DivestOS, /e/OS"""
+import json
 
 ROMS = {
-    'LineageOS': {'base': 'AOSP', 'bloatware': 'minimal', 'privacy': 'good', 'customization': 'excellent', 'gapps': 'optional'},
-    'GrapheneOS': {'base': 'AOSP', 'bloatware': 'none', 'privacy': 'maximum', 'customization': 'limited', 'gapps': 'no'},
-    'CalyxOS': {'base': 'AOSP', 'bloatware': 'minimal', 'privacy': 'excellent', 'customization': 'good', 'gapps': 'optional'},
-    'CrDroid': {'base': 'LineageOS', 'bloatware': 'minimal', 'privacy': 'good', 'customization': 'excellent', 'gapps': 'optional'},
-    'Evolution X': {'base': 'AOSP', 'bloatware': 'minimal', 'privacy': 'good', 'customization': 'excellent', 'gapps': 'bundled'},
+    'LineageOS': {
+        'privacy': 7, 'customization': 9, 'updates': 8, 'devices': 200,
+        'root': True, 'gapps': 'optional', 'tracking': 'minimal'
+    },
+    'GrapheneOS': {
+        'privacy': 10, 'customization': 4, 'updates': 10, 'devices': 2,
+        'root': False, 'gapps': None, 'tracking': 'hardened'
+    },
+    'CalyxOS': {
+        'privacy': 9, 'customization': 7, 'updates': 8, 'devices': 10,
+        'root': False, 'gapps': 'microG', 'tracking': 'minimal'
+    },
+    'DivestOS': {
+        'privacy': 9, 'customization': 8, 'updates': 7, 'devices': 150,
+        'root': True, 'gapps': 'optional', 'tracking': 'minimal'
+    },
+    '/e/OS': {
+        'privacy': 8, 'customization': 7, 'updates': 7, 'devices': 40,
+        'root': False, 'gapps': None, 'tracking': 'minimal'
+    },
 }
 
-def compare(args):
-    selected = [r for r in ROMS if not args.filter or args.filter.lower() in r.lower()]
-    if args.json:
-        print(json.dumps({r: ROMS[r] for r in selected}, indent=2))
-        return
-    print("\n🔍 ROM Comparison\n")
-    cols = ['Bloatware', 'Privacy', 'Customization', 'GApps']
-    print(f"{'ROM':<20}", end='')
-    for c in cols: print(f"{c:<15}", end='')
-    print()
-    print('─' * 80)
-    for rom in selected:
-        info = ROMS[rom]
-        print(f"{rom:<20}", end='')
-        for col in cols:
-            key = col.lower().replace(' ', '')
-            val = info.get(col.lower().replace(' ', ''), '?')
-            print(f"{val:<15}", end='')
-        print()
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--filter', help='Filter ROMs by name')
-    parser.add_argument('--json', action='store_true')
-    args = parser.parse_args()
-    compare(args)
+print("ROM Comparison Matrix\n")
+print(f"{'ROM':<15} {'Privacy':<10} {'Customization':<15} {'Updates':<10} {'Devices':<10}")
+print("─" * 60)
+for rom, props in ROMS.items():
+    print(f"{rom:<15} {props['privacy']}/10{'':<5} {props['customization']}/10{'':<8} "
+          f"{props['updates']}/10{'':<5} {props['devices']}")
