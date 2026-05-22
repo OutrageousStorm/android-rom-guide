@@ -220,3 +220,13 @@ Device guides, ROM additions, and corrections are welcome. See [CONTRIBUTING.md]
 ---
 
 *Maintained by [Tom](https://github.com/OutrageousStorm) · Android Intelligence · CC BY-SA 4.0*
+
+## ROM Comparison CLI (TypeScript)
+Deno-based ROM feature comparison tool.
+
+```bash
+deno run tools/rom-compare.ts lineageos pixelExperience
+deno run tools/rom-compare.ts --list
+```
+
+Supports: LineageOS, crDroid, Pixel Experience, AOSP Extended
