@@ -230,3 +230,22 @@ deno run tools/rom-compare.ts --list
 ```
 
 Supports: LineageOS, crDroid, Pixel Experience, AOSP Extended
+
+## 🛡️ Verification Tools
+
+### ROM Verification Engine
+**File:** `tools/rom-verification-engine.go` (Go)
+
+Verify ROM authenticity before flashing — validate checksums, detect tampering, verify source repository.
+
+**Usage:**
+```bash
+go run tools/rom-verification-engine.go -rom lineageos.zip -checksum lineageos.sha256 -repo https://github.com/LineageOS/android -v
+```
+
+**Features:**
+- SHA256 checksum validation
+- GitHub repository verification
+- Corruption detection
+- Tamper detection
+
